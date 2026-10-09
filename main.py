@@ -8,7 +8,10 @@ except:
   import socket
   
 import dht
-from mlx90640 import MLX90640, RefreshRate, init_float_array
+#from mlx90640 import MLX90640, RefreshRate, init_float_array
+from array import array
+import mlx90641
+
 import tsl2591
 
 # To connect to weather station : http://astroweatherstation/index.html or http://10.42.0.126/index.html
@@ -20,9 +23,14 @@ i2c = I2C(0, sda=Pin(22), scl=Pin(23), freq=400_000)
 # DHT22 Temperature+Humidity
 DHT22sensor = dht.DHT22(Pin(0))
 # MLX90640 Infrared camera
+i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=400000)
+mlx90641.init(i2c, 0x33)
+mlx90641.set_refresh_rate(3)        # 4 Hz
+"""
 MLX90640sensor = MLX90640(i2c)
 MLX90640sensor.refresh_rate = RefreshRate.REFRESH_2_HZ
-ir_frame = init_float_array(768)
+"""
+# ir_frame = init_float_array(768)
 # MH-RD Rain sensor
 MHRDsensor = ADC(Pin(1))
 MHRDsensor.width(ADC.WIDTH_12BIT)
@@ -92,9 +100,13 @@ while True:
         td = dew_point(tc, rh)
 
         # MLX90640 Infrared camera
+        ir_img = array('f', [0.0] * 192)       # 16 x 12
+        mlx90641.read(ir_img)
+        """
         MLX90640sensor.get_frame(ir_frame)
         MLX90640sensor.get_frame(ir_frame) # Read twice to solve checkerboard issue
-        ir_center = cutout_frame(ir_frame, 16, 12, 5, 5)
+        """
+        ir_center = cutout_frame(ir_img, 16, 12, 5, 5)
         temp_sky = mean(ir_center)
         # Heuristic to check in real conditions
         if (temp_sky < -8.):
